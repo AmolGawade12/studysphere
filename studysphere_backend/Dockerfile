@@ -32,5 +32,5 @@ RUN python manage.py collectstatic --noinput || true
 # Expose container port
 EXPOSE 8000
 
-# Run WSGI application using Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120", "config.wsgi:application"]
+# Run WSGI application using Gunicorn dynamically bound to $PORT or fallback 8000
+CMD sh -c "gunicorn --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120 config.wsgi:application"

@@ -28,7 +28,8 @@ DEBUG = env.bool('DEBUG', default=True)
 # ALLOWED_HOSTS configuration
 allowed_hosts_raw = env('ALLOWED_HOSTS', default='')
 if allowed_hosts_raw:
-    ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_raw.split(',') if host.strip()]
+    parsed_hosts = [host.strip() for host in allowed_hosts_raw.split(',') if host.strip()]
+    ALLOWED_HOSTS = list(set(parsed_hosts + ['.onrender.com', 'localhost', '127.0.0.1']))
 else:
     ALLOWED_HOSTS = ['*'] if DEBUG else ['.onrender.com', 'localhost', '127.0.0.1']
 
@@ -144,7 +145,7 @@ STORAGES = {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage" if not DEBUG else "django.contrib.staticfiles.storage.StaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage" if not DEBUG else "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
 
