@@ -1,10 +1,17 @@
 // Centralized API configuration module
-// Ensures /api is always attached regardless of input format
-let raw = (import.meta.env.VITE_API_URL || 'https://studysphere-pvvn.onrender.com/api').trim();
+// Supports VITE_API_BASE_URL and VITE_API_URL environment variables
+let raw = (
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
+  'https://studysphere-pvvn.onrender.com/api'
+).trim();
+
+// Remove trailing slashes
 if (raw.endsWith('/')) {
   raw = raw.slice(0, -1);
 }
 
+// Ensure /api path suffix is present for REST endpoints
 if (!raw.endsWith('/api')) {
   raw = `${raw}/api`;
 }

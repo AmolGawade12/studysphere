@@ -12,7 +12,7 @@ export const checkBackendConnection = async (): Promise<boolean> => {
     console.log(`[StudySphere AI] Connected to Django REST API at ${API_URL}`);
     return true;
   } catch (e) {
-    console.log(`[StudySphere AI] Server check at ${API_URL}...`);
+    console.warn(`[StudySphere AI] Probing backend server at ${API_URL}...`, e);
     return false;
   }
 };
@@ -43,6 +43,7 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}): P
   };
 
   const url = `${API_URL}${endpoint}`;
+  const method = options.method || 'GET';
 
   try {
     const response = await fetch(url, fetchOptions);
@@ -70,6 +71,7 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}): P
     }
 
     if (!response.ok) {
+      console.error(`[API Request Failed] ${method} ${url} | HTTP Status: ${response.status}`, data);
       throw { 
         status: response.status, 
         data: typeof data === 'object' && data !== null ? data : { error: String(data) } 
@@ -79,15 +81,15 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}): P
   } catch (err: any) {
     // If it's an HTTP error response from Django (e.g. 400 Bad Request, 401, 403, 404, 500)
     if (err && typeof err.status === 'number' && err.status > 0) {
-      console.error(`[API Error ${err.status}] ${url}:`, err.data);
+      console.error(`[Django API HTTP Error ${err.status}] ${method} ${url}:`, err.data);
       throw err;
     }
     
     // Connection Failure (Network error / server offline)
-    console.error(`[API Network Connection Error] Failed to reach ${url}:`, err);
+    console.error(`[API Network Connection Failure] Failed to reach ${method} ${url}:`, err);
     throw { 
       status: 0, 
-      data: { error: 'Unable to connect to the StudySphere server. Please try again.' } 
+      data: { error: `Unable to connect to the StudySphere server at ${url}. Please try again.` } 
     };
   }
 };
