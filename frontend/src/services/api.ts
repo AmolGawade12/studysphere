@@ -1,7 +1,5 @@
 import { mockDb, initializeMockDb } from './mockDb';
-
-// Centralised HTTP client connecting to Django REST API (http://127.0.0.1:8000/api)
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+import API_URL, { BACKEND_BASE_URL } from '../config/api';
 
 initializeMockDb();
 
@@ -9,12 +7,13 @@ let isMockActive = false;
 
 export const checkBackendConnection = async (): Promise<boolean> => {
   try {
-    const res = await fetch(`${API_URL.replace('/api', '')}/admin/login/`, { method: 'HEAD' });
+    const adminUrl = `${BACKEND_BASE_URL}/admin/login/`;
+    const res = await fetch(adminUrl, { method: 'HEAD' });
     isMockActive = false;
-    console.log("[StudySphere AI] Django REST API Backend is ONLINE at http://127.0.0.1:8000.");
+    console.log(`[StudySphere AI] Connected to Django REST API at ${API_URL}`);
     return true;
   } catch (e) {
-    console.log("[StudySphere AI] Checking backend server status at http://127.0.0.1:8000.");
+    console.log(`[StudySphere AI] Probing backend server status at ${API_URL}...`);
     return false;
   }
 };
@@ -26,7 +25,7 @@ export const setMockActive = (active: boolean) => {
   isMockActive = active;
 };
 
-// Standard API Request Helper targeting real Django REST Framework
+// Standard API Request Helper targeting Django REST Framework
 export const apiRequest = async (endpoint: string, options: RequestInit = {}): Promise<any> => {
   const token = localStorage.getItem('ss_token');
   const headers = new Headers(options.headers || {});
@@ -45,7 +44,6 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}): P
   };
 
   const url = `${API_URL}${endpoint}`;
-  console.log(`[API Request] ${options.method || 'GET'} ${url}`);
 
   try {
     const response = await fetch(url, fetchOptions);
@@ -73,24 +71,22 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}): P
       }
     }
 
-    console.log(`[API Response] ${response.status} ${url}`, data);
-
     if (!response.ok) {
       throw { status: response.status, data };
     }
     return data;
   } catch (err: any) {
-    // If it's an API HTTP error response (e.g. 400 Bad Request, 401, 403, 500)
+    // If it's an HTTP error response from Django (e.g. 400 Bad Request, 401, 403, 500)
     if (err && typeof err.status === 'number' && err.status > 0) {
-      console.error(`[API HTTP Error ${err.status}] ${url}:`, err.data);
+      console.error(`[API Error ${err.status}] ${url}:`, err.data);
       throw err;
     }
     
-    // TypeError is thrown on complete network failure (e.g. server down)
-    console.error(`[API Connection Failure] Could not connect to Django backend at ${url}:`, err);
+    // Connection Failure (Network error / server offline)
+    console.error(`[API Network Connection Error] Failed to reach ${url}:`, err);
     throw { 
       status: 0, 
-      data: { error: 'Unable to connect to Django REST API server at http://127.0.0.1:8000/.' } 
+      data: { error: 'Unable to connect to the StudySphere server. Please try again.' } 
     };
   }
 };

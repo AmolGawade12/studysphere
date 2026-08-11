@@ -178,26 +178,30 @@ default_cors_origins = [
     "http://127.0.0.1:5174",
 ]
 
-if cors_origins_env:
-    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins_env.split(',') if origin.strip()]
-else:
-    CORS_ALLOWED_ORIGINS = default_cors_origins
-    if frontend_url:
-        clean_frontend = frontend_url.rstrip('/')
-        if clean_frontend not in CORS_ALLOWED_ORIGINS:
-            CORS_ALLOWED_ORIGINS.append(clean_frontend)
+CORS_ALLOWED_ORIGINS = list(default_cors_origins)
 
-CORS_ALLOW_ALL_ORIGINS = env.bool('CORS_ALLOW_ALL_ORIGINS', default=False if not DEBUG else True)
+if frontend_url:
+    clean_frontend = frontend_url.rstrip('/')
+    if clean_frontend not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(clean_frontend)
+
+if cors_origins_env:
+    for origin in cors_origins_env.split(','):
+        clean = origin.strip().rstrip('/')
+        if clean and clean not in CORS_ALLOWED_ORIGINS:
+            CORS_ALLOWED_ORIGINS.append(clean)
+
+CORS_ALLOW_ALL_ORIGINS = env.bool('CORS_ALLOW_ALL_ORIGINS', default=True)
 CORS_ALLOW_CREDENTIALS = True
 
 # CSRF Trusted Origins
+CSRF_TRUSTED_ORIGINS = list(CORS_ALLOWED_ORIGINS)
 csrf_origins_env = env('CSRF_TRUSTED_ORIGINS', default='')
 if csrf_origins_env:
-    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_origins_env.split(',') if origin.strip()]
-elif frontend_url:
-    CSRF_TRUSTED_ORIGINS = [frontend_url.rstrip('/')]
-else:
-    CSRF_TRUSTED_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"]
+    for origin in csrf_origins_env.split(','):
+        clean = origin.strip().rstrip('/')
+        if clean and clean not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(clean)
 
 
 # Production Security Settings
