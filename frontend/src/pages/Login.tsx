@@ -35,8 +35,17 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, o
       showToast('Welcome back to StudySphere AI!', 'success');
       onSuccess();
     } catch (err: any) {
-      console.error(err);
-      const detailMsg = err?.data?.error || 'Invalid credentials. If offline, use student / password123';
+      console.error("[Login Form] Error:", err);
+      let detailMsg = 'Invalid email/username or password.';
+      if (err?.data?.error) {
+        detailMsg = err.data.error;
+      } else if (err?.data?.detail) {
+        detailMsg = err.data.detail;
+      } else if (err?.data?.non_field_errors) {
+        detailMsg = Array.isArray(err.data.non_field_errors) ? err.data.non_field_errors.join(' ') : String(err.data.non_field_errors);
+      } else if (err?.message) {
+        detailMsg = err.message;
+      }
       setErrorMsg(detailMsg);
       showToast(detailMsg, 'error');
     } finally {

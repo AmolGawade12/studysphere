@@ -36,23 +36,20 @@ class LoginView(APIView):
 
     def post(self, request):
         try:
-            username = request.data.get('username', '').strip()
+            username_or_email = (request.data.get('username') or request.data.get('email') or '').strip()
             password = request.data.get('password', '')
-            email = request.data.get('email', '').strip()
 
-            # Flexible login: allow logging in using email or username
-            if not username and email:
-                user_obj = User.objects.filter(email__iexact=email).first()
-                if user_obj:
-                    username = user_obj.username
-                else:
-                    return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-            elif username and '@' in username:
-                user_obj = User.objects.filter(email__iexact=username).first()
-                if user_obj:
-                    username = user_obj.username
+            if not username_or_email or not password:
+                return Response({'error': 'Please enter both email/username and password.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            user = authenticate(username=username, password=password)
+            # Look up user by username OR email
+            user_obj = User.objects.filter(username__iexact=username_or_email).first()
+            if not user_obj:
+                user_obj = User.objects.filter(email__iexact=username_or_email).first()
+
+            username_to_auth = user_obj.username if user_obj else username_or_email
+
+            user = authenticate(username=username_to_auth, password=password)
             if user:
                 token, created = Token.objects.get_or_create(user=user)
                 profile_serializer = ProfileSerializer(user.profile)
@@ -65,7 +62,7 @@ class LoginView(APIView):
                         'profile': profile_serializer.data
                     }
                 }, status=status.HTTP_200_OK)
-            return Response({'error': 'Invalid email or password'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Invalid username/email or password.'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': f"Login failed: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
