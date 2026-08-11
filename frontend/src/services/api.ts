@@ -1,5 +1,5 @@
 import { mockDb, initializeMockDb } from './mockDb';
-import API_URL, { BACKEND_BASE_URL } from '../config/api';
+import API_URL from '../config/api';
 
 initializeMockDb();
 
@@ -7,13 +7,12 @@ let isMockActive = false;
 
 export const checkBackendConnection = async (): Promise<boolean> => {
   try {
-    const adminUrl = `${BACKEND_BASE_URL}/admin/login/`;
-    const res = await fetch(adminUrl, { method: 'HEAD' });
+    const res = await fetch(`${API_URL}/subjects/`, { method: 'OPTIONS' });
     isMockActive = false;
     console.log(`[StudySphere AI] Connected to Django REST API at ${API_URL}`);
     return true;
   } catch (e) {
-    console.log(`[StudySphere AI] Probing backend server status at ${API_URL}...`);
+    console.log(`[StudySphere AI] Server check at ${API_URL}...`);
     return false;
   }
 };
