@@ -57,25 +57,27 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}): P
       return null;
     }
 
-    let data;
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      data = await response.json();
-    } else {
-      const text = await response.text();
+    let data: any;
+    const text = await response.text();
+    if (text) {
       try {
         data = JSON.parse(text);
       } catch {
-        data = { message: text };
+        data = { error: text.length < 200 ? text : `Server returned HTTP ${response.status}` };
       }
+    } else {
+      data = {};
     }
 
     if (!response.ok) {
-      throw { status: response.status, data };
+      throw { 
+        status: response.status, 
+        data: typeof data === 'object' && data !== null ? data : { error: String(data) } 
+      };
     }
     return data;
   } catch (err: any) {
-    // If it's an HTTP error response from Django (e.g. 400 Bad Request, 401, 403, 500)
+    // If it's an HTTP error response from Django (e.g. 400 Bad Request, 401, 403, 404, 500)
     if (err && typeof err.status === 'number' && err.status > 0) {
       console.error(`[API Error ${err.status}] ${url}:`, err.data);
       throw err;
