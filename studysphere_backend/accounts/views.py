@@ -42,7 +42,7 @@ class LoginView(APIView):
             if not username_or_email or not password:
                 return Response({'error': 'Please enter both email/username and password.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Look up user by username OR email
+            # Flexible login: allow logging in using email or username
             user_obj = User.objects.filter(username__iexact=username_or_email).first()
             if not user_obj:
                 user_obj = User.objects.filter(email__iexact=username_or_email).first()
@@ -65,6 +65,32 @@ class LoginView(APIView):
             return Response({'error': 'Invalid username/email or password.'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': f"Login failed: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+class ResetPasswordView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        try:
+            email_or_username = (request.data.get('email') or request.data.get('username') or request.data.get('email_or_username') or '').strip()
+            new_password = request.data.get('new_password') or request.data.get('password')
+
+            if not email_or_username or not new_password:
+                return Response({'error': 'Please provide email/username and new_password.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            user = User.objects.filter(username__iexact=email_or_username).first()
+            if not user:
+                user = User.objects.filter(email__iexact=email_or_username).first()
+
+            if not user:
+                return Response({'error': f"User '{email_or_username}' not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            user.set_password(new_password)
+            user.save()
+            return Response({
+                'message': f"Password for {user.username} has been reset to '{new_password}' successfully! You can now log in."
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': f"Password reset failed: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
 class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
