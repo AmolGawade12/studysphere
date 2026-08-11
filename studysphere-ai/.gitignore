@@ -1,0 +1,24 @@
+# Environments and Secrets
+.env
+.env.local
+*.env
+
+# Python / Django
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+ENV/
+env/
+*.sqlite3
+db.sqlite3-journal
+staticfiles/
+media/
+
+# Node / React / Vite
+node_modules/
+dist/
+dist-ssr/
+*.local
+.tmp/
+.DS_Store

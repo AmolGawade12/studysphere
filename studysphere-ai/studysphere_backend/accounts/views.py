@@ -36,21 +36,20 @@ class LoginView(APIView):
 
     def post(self, request):
         try:
-            username = request.data.get('username', '').strip()
-            password = request.data.get('password', '')
-            email = request.data.get('email', '').strip()
+            username = request.data.get('username')
+            password = request.data.get('password')
+            email = request.data.get('email')
 
-            # Flexible login: allow logging in using email or username
+            # Allow login using email or username
             if not username and email:
-                user_obj = User.objects.filter(email__iexact=email).first()
-                if user_obj:
-                    username = user_obj.username
-                else:
+                try:
+                    user_obj = User.objects.filter(email__iexact=email).first()
+                    if user_obj:
+                        username = user_obj.username
+                    else:
+                        return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+                except Exception:
                     return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-            elif username and '@' in username:
-                user_obj = User.objects.filter(email__iexact=username).first()
-                if user_obj:
-                    username = user_obj.username
 
             user = authenticate(username=username, password=password)
             if user:
@@ -65,7 +64,7 @@ class LoginView(APIView):
                         'profile': profile_serializer.data
                     }
                 }, status=status.HTTP_200_OK)
-            return Response({'error': 'Invalid email or password'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': f"Login failed: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
